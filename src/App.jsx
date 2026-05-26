@@ -98,33 +98,116 @@ const kadenceGroups = [
 ];
 
 // ─── Ollie Logic ─────────────────────────────────────────────────────────────
-function generateOlliePalette(brandHex, altHex) {
+function generateOlliePalette(brandHex, altHex, theme = "light") {
   const [bh, bs, bl] = hexToHsl(brandHex);
   const [ah, as_, al] = hexToHsl(altHex);
 
+  // Brand 4 — same for both themes
   const brandAccent    = hslToHex(bh, Math.min(bs * 0.35, 40), Math.min(bl + (100 - bl) * 0.88, 97));
   const brandAltAccent = hslToHex(ah, Math.min(as_ * 0.55, 50), Math.max(al * 0.38, 20));
-  const contrast       = hslToHex(bh, Math.min(bs * 0.15, 12), 10);
-  const contrastAccent = hslToHex(bh, Math.min(bs * 0.25, 22), 88);
-  const base           = "#FFFFFF";
-  const baseAccent     = hslToHex(bh, Math.min(bs * 0.55, 45), Math.max(bl * 0.6, 35));
-  const tint           = hslToHex(bh, Math.min(bs * 0.18, 14), 97);
-  const borderBase     = hslToHex(bh, Math.min(bs * 0.22, 18), 88);
-  const borderContrast = hslToHex(bh, Math.min(bs * 0.18, 18), 28);
+
+  // Neutral 7 — diverge by theme
+  let contrast, contrastAccent, base, baseAccent, tint, borderBase, borderContrast;
+
+  if (theme === "light") {
+    contrast       = hslToHex(bh, Math.min(bs * 0.15, 12), 10);   // near-black text
+    contrastAccent = hslToHex(bh, Math.min(bs * 0.25, 22), 88);   // muted on dark sections
+    base           = "#FFFFFF";
+    baseAccent     = hslToHex(bh, Math.min(bs * 0.55, 45), Math.max(bl * 0.6, 35));
+    tint           = hslToHex(bh, Math.min(bs * 0.18, 14), 97);   // subtle tinted bg
+    borderBase     = hslToHex(bh, Math.min(bs * 0.22, 18), 88);   // border on light
+    borderContrast = hslToHex(bh, Math.min(bs * 0.18, 18), 28);   // border on dark
+  } else {
+    contrast       = hslToHex(bh, Math.min(bs * 0.10,  8), 93);   // near-white primary text
+    contrastAccent = hslToHex(bh, Math.min(bs * 0.15, 12), 62);   // muted text on dark sections
+    base           = hslToHex(bh, Math.min(bs * 0.18, 15),  8);   // near-black page bg
+    baseAccent     = hslToHex(bh, Math.min(bs * 0.28, 22), 68);   // secondary text — light enough on dark bg
+    tint           = hslToHex(bh, Math.min(bs * 0.20, 16), 14);   // raised dark section bg
+    borderBase     = hslToHex(bh, Math.min(bs * 0.20, 16), 20);   // border on dark surfaces
+    borderContrast = hslToHex(bh, Math.min(bs * 0.14, 12), 58);   // border on light sections
+  }
 
   return [
     { name: "Brand",              slug: "primary",           hex: brandHex,      purpose: "Buttons, CTAs, key UI elements" },
     { name: "Brand Accent",       slug: "primary-accent",    hex: brandAccent,   purpose: "Text on Brand backgrounds" },
     { name: "Brand Alt",          slug: "primary-alt",       hex: altHex,        purpose: "Secondary brand, cards, sections" },
     { name: "Brand Alt Accent",   slug: "primary-alt-accent",hex: brandAltAccent,purpose: "Text on Brand Alt backgrounds" },
-    { name: "Contrast",           slug: "main",              hex: contrast,      purpose: "Default text color" },
-    { name: "Contrast Accent",    slug: "main-accent",       hex: contrastAccent,purpose: "Muted text on dark backgrounds" },
-    { name: "Base",               slug: "base",              hex: base,          purpose: "Default page background" },
+    { name: "Contrast",           slug: "main",              hex: contrast,      purpose: theme === "dark" ? "Primary text (light)" : "Default text color" },
+    { name: "Contrast Accent",    slug: "main-accent",       hex: contrastAccent,purpose: theme === "dark" ? "Muted text on dark bg" : "Muted text on dark sections" },
+    { name: "Base",               slug: "base",              hex: base,          purpose: theme === "dark" ? "Page background (dark)" : "Default page background" },
     { name: "Base Accent",        slug: "secondary",         hex: baseAccent,    purpose: "Secondary text / subheadings" },
-    { name: "Tint",               slug: "tertiary",          hex: tint,          purpose: "Subtle section backgrounds" },
-    { name: "Border Base",        slug: "border-light",      hex: borderBase,    purpose: "Borders on light backgrounds" },
-    { name: "Border Contrast",    slug: "border-dark",       hex: borderContrast,purpose: "Borders on dark backgrounds" },
+    { name: "Tint",               slug: "tertiary",          hex: tint,          purpose: theme === "dark" ? "Raised section background" : "Subtle section backgrounds" },
+    { name: "Border Base",        slug: "border-light",      hex: borderBase,    purpose: theme === "dark" ? "Borders on dark bg" : "Borders on light backgrounds" },
+    { name: "Border Contrast",    slug: "border-dark",       hex: borderContrast,purpose: theme === "dark" ? "Borders on light sections" : "Borders on dark backgrounds" },
   ];
+}
+
+// ─── Ollie Site Mockup ────────────────────────────────────────────────────────
+function OllieSiteMockup({ palette, theme }) {
+  const c = Object.fromEntries(palette.map(p => [p.slug, p.hex]));
+  const isDark = theme === "dark";
+  const cardBg = isDark ? c["tertiary"] : c["base"];
+  const cardBorder = isDark ? c["border-light"] : c["border-light"];
+
+  return (
+    <div style={{ borderRadius: "14px", overflow: "hidden", border: `1px solid ${isDark ? c["border-light"] : "#e8e4ff"}`, boxShadow: "0 4px 24px rgba(0,0,0,0.12)", fontFamily: "'DM Sans', sans-serif" }}>
+      {/* Nav */}
+      <div style={{ background: c["base"], borderBottom: `1px solid ${c["border-light"]}`, padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontWeight: 700, color: c["main"], fontSize: "13px", letterSpacing: "-0.02em" }}>YourBrand</span>
+        <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+          {["About", "Work", "Blog"].map(l => (
+            <span key={l} style={{ fontSize: "11px", color: c["secondary"], cursor: "pointer" }}>{l}</span>
+          ))}
+          <span style={{ fontSize: "11px", color: "#fff", background: c["primary"], padding: "5px 14px", borderRadius: "20px", cursor: "pointer", fontWeight: 600 }}>Hire Us</span>
+        </div>
+      </div>
+
+      {/* Hero */}
+      <div style={{ background: c["primary"], padding: "36px 24px", textAlign: "center" }}>
+        <div style={{ display: "inline-block", fontSize: "9px", fontWeight: 700, color: c["primary-accent"], background: `${c["primary-accent"]}22`, border: `1px solid ${c["primary-accent"]}44`, borderRadius: "20px", padding: "3px 10px", marginBottom: "12px", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          Award-winning studio
+        </div>
+        <div style={{ fontSize: "22px", fontWeight: 700, color: c["primary-accent"], lineHeight: 1.2, marginBottom: "10px" }}>
+          Build something<br />truly great
+        </div>
+        <div style={{ fontSize: "11px", color: `${c["primary-accent"]}bb`, marginBottom: "18px", maxWidth: "260px", margin: "0 auto 18px", lineHeight: 1.6 }}>
+          We help brands grow with strategy, design, and results-driven execution.
+        </div>
+        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+          <button style={{ background: c["primary-accent"], color: c["primary"], padding: "8px 18px", borderRadius: "20px", border: "none", fontWeight: 700, fontSize: "11px", cursor: "pointer" }}>Get Started</button>
+          <button style={{ background: "transparent", color: c["primary-accent"], padding: "8px 18px", borderRadius: "20px", border: `1.5px solid ${c["primary-accent"]}55`, fontWeight: 600, fontSize: "11px", cursor: "pointer" }}>See Our Work</button>
+        </div>
+      </div>
+
+      {/* Cards */}
+      <div style={{ background: c["tertiary"], padding: "20px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+        {[["Strategy", "🎯"], ["Design", "✦"], ["Growth", "📈"]].map(([title, icon]) => (
+          <div key={title} style={{ background: cardBg, borderRadius: "10px", padding: "14px", border: `1px solid ${cardBorder}` }}>
+            <div style={{ fontSize: "16px", marginBottom: "8px" }}>{icon}</div>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: c["main"], marginBottom: "4px" }}>{title}</div>
+            <div style={{ fontSize: "9px", color: c["secondary"], lineHeight: 1.6 }}>A short description of this service that you offer to clients.</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Alt section */}
+      <div style={{ background: c["primary-alt"], padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: "13px", fontWeight: 700, color: c["primary-alt-accent"], marginBottom: "2px" }}>Ready to start?</div>
+          <div style={{ fontSize: "10px", color: `${c["primary-alt-accent"]}99` }}>Let's talk about your project today.</div>
+        </div>
+        <button style={{ background: c["primary"], color: "#fff", padding: "7px 16px", borderRadius: "20px", border: "none", fontWeight: 700, fontSize: "11px", cursor: "pointer" }}>Contact Us</button>
+      </div>
+
+      {/* Footer */}
+      <div style={{ background: c["base"], borderTop: `1px solid ${c["border-light"]}`, padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: "10px", color: c["secondary"] }}>YourBrand © 2025</span>
+        <div style={{ display: "flex", gap: "12px" }}>
+          {["Privacy", "Terms"].map(l => <span key={l} style={{ fontSize: "10px", color: c["secondary"], cursor: "pointer" }}>{l}</span>)}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function deriveAltColor(brandHex) {
@@ -247,6 +330,7 @@ export default function ColorPaletteGenerator() {
   const [altHex, setAltHex] = useState(deriveAltColor("#5344F4"));
   const [altLocked, setAltLocked] = useState(false);
   const [ollieCopied, setOllieCopied] = useState(false);
+  const [ollieTheme, setOllieTheme] = useState("light");
 
   // Shared color change handler
   const handleSeedChange = (hex) => {
@@ -281,7 +365,7 @@ export default function ColorPaletteGenerator() {
   };
 
   // ── Ollie derived ──
-  const olliePalette = generateOlliePalette(seedHex, altHex);
+  const olliePalette = generateOlliePalette(seedHex, altHex, ollieTheme);
   const ollieBySlug = Object.fromEntries(olliePalette.map(c => [c.slug, c.hex]));
   const brand4 = olliePalette.slice(0, 4);
   const neutral7 = olliePalette.slice(4);
@@ -489,15 +573,38 @@ export default function ColorPaletteGenerator() {
               </div>
             </div>
 
-            {/* Export actions */}
-            <div style={{ display: "flex", gap: "8px", marginTop: "20px", justifyContent: "flex-end" }}>
-              <button onClick={ollieCopyCSS} style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #ddd8ff", background: ollieCopied ? "#5344F4" : "white", color: ollieCopied ? "white" : "#5344F4", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s" }}>
-                {ollieCopied ? "Copied!" : "Copy CSS Vars"}
-              </button>
-              <button onClick={ollieExportJSON} style={{ padding: "8px 16px", borderRadius: "8px", border: "none", background: seedHex, color: luminance(seedHex) > 0.35 ? "#111" : "#fff", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
-                Export JSON
-              </button>
+            {/* Theme toggle */}
+            <div style={{ marginTop: "20px", paddingTop: "20px", borderTop: "1px solid rgba(200,190,255,0.3)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: "11px", fontWeight: 600, color: "#8888aa", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "8px" }}>Theme Mode</div>
+                <div style={{ display: "flex", gap: "4px", background: "rgba(0,0,0,0.06)", borderRadius: "10px", padding: "4px", width: "fit-content" }}>
+                  {[["light", "☀️ Light"], ["dark", "🌙 Dark"]].map(([val, label]) => (
+                    <button key={val} onClick={() => setOllieTheme(val)} style={{ fontSize: "12px", fontWeight: ollieTheme === val ? 700 : 500, padding: "6px 16px", borderRadius: "7px", border: "none", cursor: "pointer", background: ollieTheme === val ? "#1a1a2e" : "transparent", color: ollieTheme === val ? "#fff" : "#666", transition: "all 0.15s", fontFamily: "'DM Sans', sans-serif" }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button onClick={ollieCopyCSS} style={{ padding: "8px 16px", borderRadius: "8px", border: "1.5px solid #ddd8ff", background: ollieCopied ? "#5344F4" : "white", color: ollieCopied ? "white" : "#5344F4", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.2s" }}>
+                  {ollieCopied ? "Copied!" : "Copy CSS Vars"}
+                </button>
+                <button onClick={ollieExportJSON} style={{ padding: "8px 16px", borderRadius: "8px", border: "none", background: seedHex, color: luminance(seedHex) > 0.35 ? "#111" : "#fff", fontWeight: 600, fontSize: "12px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                  Export JSON
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Site mockup preview */}
+          <div style={{ marginBottom: "28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: ollieTheme === "dark" ? "#555" : seedHex }} />
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a2e", letterSpacing: "0.04em", textTransform: "uppercase" }}>Site Preview</span>
+              <span style={{ fontSize: "11px", color: "#aaa" }}>{ollieTheme === "dark" ? "Dark theme" : "Light theme"} · how your palette looks in context</span>
+            </div>
+            <OllieSiteMockup palette={olliePalette} theme={ollieTheme} />
           </div>
 
           {/* Brand colors */}
