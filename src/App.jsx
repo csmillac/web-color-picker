@@ -103,8 +103,10 @@ function generateOlliePalette(brandHex, altHex, theme = "light") {
   const [ah, as_, al] = hexToHsl(altHex);
 
   // Brand 4 — same for both themes
-  const brandAccent    = hslToHex(bh, Math.min(bs * 0.35, 40), Math.min(bl + (100 - bl) * 0.88, 97));
-  const brandAltAccent = hslToHex(ah, Math.min(as_ * 0.55, 50), Math.max(al * 0.38, 20));
+  // Brand Accent: clearly-tinted light version of brand (~85-93% L, ~50-65% S)
+  const brandAccent    = hslToHex(bh, Math.max(Math.min(bs * 0.75, 65), 38), Math.min(bl + (100 - bl) * 0.75, 93));
+  // Brand Alt Accent: dark text for use on the alt background (~22-28% L)
+  const brandAltAccent = hslToHex(ah, Math.min(as_ * 0.80, 60), Math.max(al * 0.28, 18));
 
   // Neutral 7 — diverge by theme
   let contrast, contrastAccent, base, baseAccent, tint, borderBase, borderContrast;
@@ -211,8 +213,9 @@ function OllieSiteMockup({ palette, theme }) {
 }
 
 function deriveAltColor(brandHex) {
-  const [h, s, l] = hexToHsl(brandHex);
-  return hslToHex((h + 32) % 360, Math.min(s * 0.75, 75), Math.min(l + 18, 88));
+  const [h, s] = hexToHsl(brandHex);
+  // Alt is always a light (~87% L), moderately-saturated tint with a slight hue shift
+  return hslToHex((h + 30) % 360, Math.min(s * 0.65, 60), 87);
 }
 
 const OLLIE_PRESETS = [
